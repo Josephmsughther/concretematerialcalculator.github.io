@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Concrete Material Calculator</title>
+<style>
+  :root {
+    --navy: #1a2b45;
+    --accent: #2f7a4f;
+    --light-bg: #f4f6f8;
+    --border: #d6dbe1;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: var(--light-bg);
+    margin: 0;
+    padding: 24px;
+    color: #1f2937;
+  }
+  .wrap { max-width: 780px; margin: 0 auto; }
+  h1 { color: var(--navy); font-size: 1.6rem; margin-bottom: 4px; }
+  .subtitle { color: #4b5563; font-size: 0.95rem; margin-bottom: 20px; }
+  .card {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 18px;
+  }
+  .card h2 {
+    font-size: 1rem;
+    color: var(--navy);
+    margin-top: 0;
+    margin-bottom: 14px;
+    border-bottom: 2px solid var(--accent);
+    padding-bottom: 6px;
+  }
+  .output-card {
+    background: #eefaf1;
+    border: 2px solid var(--accent);
+  }
+  .output-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid #d3ecdb;
+  }
+  .output-row:last-child { border-bottom: none; }
+  .output-label { font-weight: 600; color: var(--navy); }
+  .output-value { font-size: 1.15rem; font-weight: 700; color: var(--accent); }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 4px; color: #374151; }
+  select, input[type="number"] {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  .hidden { display: none; }
+  .disabled-note { font-size: 0.8rem; color: #9ca3af; margin-top: -10px; margin-bottom: 14px; }
+  details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--navy);
+    padding: 4px 0;
+  }
+  details p, details ul { font-size: 0.88rem; color: #4b5563; }
+  .unit-toggle { display: flex; gap: 6px; margin-bottom: 4px; }
+  .unit-btn {
+    flex: 1;
+    padding: 6px;
+    text-align: center;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    background: #fff;
+  }
+  .unit-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Concrete Material Calculator</h1>
+  <p class="subtitle">An interactive tool for estimating cement, sand, and aggregate quantities for concrete work. Calculate volume directly or from dimensions, select your concrete grade (BS/Eurocode C-grades), and view results in m³, kg, or tons — with wastage allowance built in.</p>
+
+  <!-- OUTPUT -->
+  <div class="card output-card">
+    <h2>Results</h2>
+    <div class="output-row">
+      <span class="output-label">Final Cement Bags</span>
+      <span class="output-value" id="outCementBags">—</span>
+    </div>
+    <div class="output-row">
+      <span class="output-label">Final Sand Quantity</span>
+      <span class="output-value" id="outSand">—</span>
+    </div>
+    <div class="output-row">
+      <span class="output-label">Final Aggregate Quantity</span>
+      <span class="output-value" id="outAggregate">—</span>
+    </div>
+    <div style="margin-top:14px;">
+      <label>Output Unit for Sand &amp; Aggregate</label>
+      <div class="unit-toggle" id="unitToggle">
+        <div class="unit-btn active" data-unit="m3">m³</div>
+        <div class="unit-btn" data-unit="kg">kg</div>
+        <div class="unit-btn" data-unit="tons">tons</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INPUTS -->
+  <div class="card">
+    <h2>Inputs</h2>
+
+    <label>Calculation Method</label>
+    <select id="method">
+      <option value="direct">Direct Volume</option>
+      <option value="dimensions">By Dimensions</option>
+    </select>
+
+    <div id="directBlock">
+      <label>Concrete Volume Required (m³)</label>
+      <input type="number" id="directVolume" value="1" step="0.01" min="0">
+    </div>
+
+    <div id="dimBlock" class="hidden">
+      <div class="row">
+        <div>
+          <label>Length (m)</label>
+          <input type="number" id="length" step="0.01" min="0">
+        </div>
+        <div>
+          <label>Width (m)</label>
+          <input type="number" id="width" step="0.01" min="0">
+        </div>
+        <div>
+          <label>Depth (m)</label>
+          <input type="number" id="depth" step="0.01" min="0">
+        </div>
+      </div>
+    </div>
+
+    <label>Concrete Grade</label>
+    <select id="grade">
+      <option value="C10">C10 (1 : 4 : 8)</option>
+      <option value="C15">C15 (1 : 3 : 6)</option>
+      <option value="C20" selected>C20 (1 : 2 : 4)</option>
+      <option value="C25">C25 (1 : 1.5 : 3)</option>
+      <option value="C30">C30 (1 : 1 : 2)</option>
+    </select>
+
+    <label>Wastage Allowance (%)</label>
+    <input type="number" id="wastage" value="5" step="0.5" min="0">
+  </div>
+
+  <!-- ASSUMPTIONS -->
+  <div class="card">
+    <details>
+      <summary>Assumptions &amp; Defaults</summary>
+      <ul>
+        <li>Dry Volume Factor: 1.54</li>
+        <li>Cement Density: 1,440 kg/m³</li>
+        <li>Cement Bag Weight: 50 kg</li>
+        <li>Sand Bulk Density: 1,600 kg/m³</li>
+        <li>Aggregate Bulk Density: 1,450 kg/m³</li>
+        <li>Mix ratios follow BS/Eurocode nominal mix conventions (C10–C30)</li>
+      </ul>
+      <p>These are standard reference values. Actual material densities can vary with moisture content and source — verify against site-specific data for critical structural work.</p>
+    </details>
+  </div>
+
+  <div class="card">
+    <details>
+      <summary>How to Use</summary>
+      <ol style="font-size:0.88rem; color:#4b5563;">
+        <li>Choose your Calculation Method — Direct Volume if you already know the volume, or By Dimensions if you only have length, width, and depth.</li>
+        <li>Fill in the fields relevant to your chosen method.</li>
+        <li>Select your Concrete Grade — the mix ratio is applied automatically.</li>
+        <li>Adjust Wastage % if your site requires a different allowance.</li>
+        <li>Toggle the unit for Sand and Aggregate between m³, kg, and tons — results update instantly.</li>
+      </ol>
+    </details>
+  </div>
+</div>
+
+<script>
+  const MIX = {
+    C10: [1,4,8], C15: [1,3,6], C20: [1,2,4], C25: [1,1.5,3], C30: [1,1,2]
+  };
+  const DRY_FACTOR = 1.54;
+  const CEMENT_DENSITY = 1440;
+  const BAG_WEIGHT = 50;
+  const SAND_DENSITY = 1600;
+  const AGG_DENSITY = 1450;
+
+  let currentUnit = 'm3';
+
+  const methodEl = document.getElementById('method');
+  const directBlock = document.getElementById('directBlock');
+  const dimBlock = document.getElementById('dimBlock');
+
+  methodEl.addEventListener('change', () => {
+    if (methodEl.value === 'direct') {
+      directBlock.classList.remove('hidden');
+      dimBlock.classList.add('hidden');
+    } else {
+      directBlock.classList.add('hidden');
+      dimBlock.classList.remove('hidden');
+    }
+    calculate();
+  });
+
+  document.getElementById('unitToggle').addEventListener('click', (e) => {
+    if (!e.target.classList.contains('unit-btn')) return;
+    document.querySelectorAll('.unit-btn').forEach(b => b.classList.remove('active'));
+    e.target.classList.add('active');
+    currentUnit = e.target.dataset.unit;
+    calculate();
+  });
+
+  ['directVolume','length','width','depth','grade','wastage'].forEach(id => {
+    document.getElementById(id).addEventListener('input', calculate);
+  });
+
+  function formatWithUnit(valueM3, densityPerM3) {
+    if (currentUnit === 'm3') return valueM3.toLocaleString(undefined,{maximumFractionDigits:2}) + ' m³';
+    const kg = valueM3 * densityPerM3;
+    if (currentUnit === 'kg') return kg.toLocaleString(undefined,{maximumFractionDigits:2}) + ' kg';
+    return (kg/1000).toLocaleString(undefined,{maximumFractionDigits:2}) + ' tons';
+  }
+
+  function calculate() {
+    let wetVolume;
+    if (methodEl.value === 'direct') {
+      wetVolume = parseFloat(document.getElementById('directVolume').value) || 0;
+    } else {
+      const l = parseFloat(document.getElementById('length').value) || 0;
+      const w = parseFloat(document.getElementById('width').value) || 0;
+      const d = parseFloat(document.getElementById('depth').value) || 0;
+      wetVolume = l * w * d;
+    }
+
+    const grade = document.getElementById('grade').value;
+    const [c, s, a] = MIX[grade];
+    const wastage = parseFloat(document.getElementById('wastage').value) || 0;
+
+    const dryVolume = wetVolume * DRY_FACTOR;
+    const totalParts = c + s + a;
+
+    const cementVol = dryVolume * (c / totalParts);
+    const sandVol = dryVolume * (s / totalParts);
+    const aggVol = dryVolume * (a / totalParts);
+
+    const cementWeight = cementVol * CEMENT_DENSITY;
+    const cementBags = (cementWeight / BAG_WEIGHT) * (1 + wastage/100);
+
+    const finalSandVol = sandVol * (1 + wastage/100);
+    const finalAggVol = aggVol * (1 + wastage/100);
+
+    document.getElementById('outCementBags').textContent = cementBags.toLocaleString(undefined,{maximumFractionDigits:2}) + ' bags';
+    document.getElementById('outSand').textContent = formatWithUnit(finalSandVol, SAND_DENSITY);
+    document.getElementById('outAggregate').textContent = formatWithUnit(finalAggVol, AGG_DENSITY);
+  }
+
+  calculate();
+</script>
+</body>
+</html>
